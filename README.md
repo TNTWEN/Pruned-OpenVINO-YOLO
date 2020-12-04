@@ -65,9 +65,9 @@ python train.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights weights/
 
 **Important note！**：
 
--Try not to interrupt the training process and finish the training at one time. [ultralytics/yolov3](https://github.com/ultralytics/yolov3) has the problem of discontinuity and sharp decline in various indicators of interrupted training.
+- Try not to interrupt the training process and finish the training at one time. [ultralytics/yolov3](https://github.com/ultralytics/yolov3) has the problem of discontinuity and sharp decline in various indicators of interrupted training.
 
--During sparse training, mAP@0.5 will gradually decrease first, and will slowly rise back after the learning rate decreases in the later stage of training. You can first set s to 0.001. If mAP@0.5 drops sharply in the first few epochs, and P, R, and mAP@0.5 may even drop to 0, then adjust the value of s to a smaller value, such as 0.0001, But this also means that more epochs may be needed to fully sparse
+- During sparse training, mAP@0.5 will gradually decrease first, and will slowly rise back after the learning rate decreases in the later stage of training. You can first set s to 0.001. If mAP@0.5 drops sharply in the first few epochs, and P, R, and mAP@0.5 may even drop to 0, then adjust the value of s to a smaller value, such as 0.0001, But this also means that more epochs may be needed to fully sparse
 
  The picture below is my tensorboard diagram of the sparse training of the YOLOv4 model
 
@@ -75,9 +75,9 @@ python train.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights weights/
 
 Although mAP declined in the early stage of sparse training, the minimum remained above 0.4, indicating that the selected s value was appropriate. However, training was abnormal at 230 epochs, P increased sharply, and R decreased sharply (at one time it was close to 0 ), mAP@0.5 also fell sharply. This kind of situation will not appear under normal circumstances in the middle and late stages of training. Even if you encounter a situation like mine, don't panic. If the various indicators have a tendency to return to normal, it will have no effect. If it can't recover after a delay, you may need to retrain.
 
--I generally set the parameter epochs to 300 to ensure sufficient sparseness. You can adjust it according to your own data set. Insufficient sparseness will greatly affect the subsequent pruning effect.
+- I generally set the parameter epochs to 300 to ensure sufficient sparseness. You can adjust it according to your own data set. Insufficient sparseness will greatly affect the subsequent pruning effect.
 
--By observing the bn_weights/hist graph under HISTOGRAMS in tensorboard, you can observe whether the sparsity is successfully performed during training.
+- By observing the bn_weights/hist graph under HISTOGRAMS in tensorboard, you can observe whether the sparsity is successfully performed during training.
 
    It can be seen that most of the Gmma is gradually pressed to close to 0 during sparsity training .
 
@@ -243,7 +243,7 @@ So far, the whole process of model pruning of YOLOv3-SPP is completed. After mod
 
 ​ **Distribution map of the absolute value of the weight of the BN layer of the model after YOLOv4 pruning (left) and after fine-tuning (right)**
 
-至此完成了YOLOv4的模型剪枝工作，模型精度损失7个点，模型参数量与模型权重文件大小减少**98%**，BFLOPS减少**87%**，在Tesla T4 GPU上推理速度提升**61%**。
+
 So far, the whole process of model pruning of YOLOv4 is completed. After model pruning, the model accuracy loses 7 points, and the total model parameters and weight file size are reduced by **98%**. Model BFLOPS is reduced by **87%**, and the inference speed on Tesla T4 GPU is increased by **61%**.
 
 
