@@ -1,39 +1,39 @@
 # Pruned-OpenVINO-YOLO
+[简体中文](https://github.com/TNTWEN/Pruned-OpenVINO-YOLO/blob/main/README-CHINESE.md)
 
-## 简介
+## Introduction
 
-在OpenVINO 上部署YOLO目标检测算法时，完整版的模型帧率低，而tiny模型精度低，稳定性差。完整版的模型结构往往是为了能够在较复杂的场景检测80个甚至更多类别而设计，而在我们实际使用中，往往只有几个类别且场景没那么复杂。本教程将分享如何对YOLOv3/v4模型进行剪枝优化，再于OpenVINO部署，在很少损失精度的情况下在intel推理设备上获得数倍的帧率提升。
+When deploying YOLOv3/v4 on OpenVINO, the full version of the model has low FPS, while the tiny model has low accuracy and poor stability. The full version of the model structure is often designed to be able to detect 80 or more classes in more complex scenes. In our actual use, there are often only a few classes and the scenes are not that complicated. This tutorial will share how to  prune YOLOv3/v4 model, and then deploy it on OpenVINO. With little loss of accuracy, the frame rate can be increased by several times on the intel inference devices.On the intel GPU device, it can even realize the simultaneous inference of four channels of video and guarantee the basic real-time requirements
 
-大致流程如下：
+The general process is as follows:
 
-<img src="assets/image-20201113214025134.png" alt="image-20201113214025134" style="zoom:50%;" />
-
-
-
-下面以YOLOv3-SPP与YOLOv4模型为例，介绍基础训练，模型剪枝与在OpenVINO部署的细节
-
-注：我使用的数据集为COCO2014 提取的人+车两类与自己挑选并标注的UA-DETRAC数据集，其中有54647张训练集，22998张测试集
+<img src="assets/enprocess.png" alt="image-20201113214025134" style="zoom:50%;" />
 
 
 
-## 基础训练
+The following takes the YOLOv3-SPP and YOLOv4 models as examples to introduce the details of baseline training, model pruning and deployment on OpenVINO
 
-基础训练也就是正常地用自己的数据集训练，将模型训练到合适的精度。
+Note: The data set I used is the two classes of people + car extracted by COCO2014 and the UA-DETRAC dataset I picked and labeled. There are 54647 training sets and 22998 test sets.
 
-推荐使用：
 
+
+## Baseline training
+
+Basic training is to train with your own dataset normally, and train the model to the appropriate accuracy。
+
+Recommended:
 - https://github.com/ultralytics/yolov3 
-- 下面使用的剪枝代码同样支持基础训练 
+- The pruning code used below also supports basic training
 
-由于上述项目对YOLOv4的支持不是很完备,可能会导致YOLOv4的训练效果稍差一些。
+Note: As the above-mentioned projects do not support YOLOv4 very well, it may cause the training result of YOLOv4 to be slightly worse.
 
-​                                                  **YOLOv3-SPP  基础训练（baseline）结果**
+**YOLOv3-SPP baseline training result**
 
 | P     | R     | mAP@0.5 | Params | Size of   .weights | Inference_time  (Tesla  P100) | BFLOPS |
 | ----- | ----- | ------- | ------ | ------------------ | ----------------------------- | ------ |
 | 0.554 | 0.709 | 0.667   | 62.5M  | 238M               | 17.4ms                        | 65.69  |
 
-​                                              **YOLOv4模型基础训练（baseline）结果**
+**YOLOv4 baseline training result**
 
 | P     | R     | mAP@0.5 | Params | Size of   .weights | Inference_time  (Tesla T4) | BFLOPS |
 | ----- | ----- | ------- | ------ | ------------------ | -------------------------- | ------ |
@@ -41,63 +41,69 @@
 
  
 
-## 模型剪枝
+## Model pruning
 
-采用[tanluren](https://github.com/tanluren)与[zbyuan](https://github.com/zbyuan)大佬的项目[yolov3-channel-and-layer-pruning](https://github.com/tanluren/yolov3-channel-and-layer-pruning)
+i use this repos [yolov3-channel-and-layer-pruning](https://github.com/tanluren/yolov3-channel-and-layer-pruning)
 
-此剪枝项目以[ultralytics/yolov3](https://github.com/ultralytics/yolov3)为基础实现，Pruneyolov3v4文件夹 是我使用的剪枝代码版本，此版本基于2020年6月的ultralytics/yolov3实现，仅供参考，使用方法与[yolov3-channel-and-layer-pruning](https://github.com/tanluren/yolov3-channel-and-layer-pruning)相同，由于训练过程加入了更多的tricks，训练的mAP@0.5指标会稍高一些，P与R 也不太会出现相差过于悬殊的情况。 
+Thanks [tanluren](https://github.com/tanluren) and[zbyuan](https://github.com/zbyuan) for their great work
 
-模型剪枝部分如果有问题也可以在[yolov3-channel-and-layer-pruning](https://github.com/tanluren/yolov3-channel-and-layer-pruning)提问，[tanluren](https://github.com/tanluren)与[zbyuan](https://github.com/zbyuan)大佬更加专业。 我也只使用了部分剪枝策略并将剪枝结果在此分享。
+This model pruning project is based on [ultralytics/yolov3](https://github.com/ultralytics/yolov3).The folder named after **Pruneyolov3v4** is the version of the pruning code I used.This version is based on the June 2020's ultralytics/yolov3, for reference only.The method of use is the same as [yolov3-channel-and-layer-pruning](https://github.com/tanluren/yolov3-channel-and-layer-pruning). Because more tricks are added to the training process, the training mAP@0.5  will be slightly higher, and P and R will not be too far apart.
 
-### 稀疏训练
 
-基础训练保存的pt权重包含epoch信息，可通过`python -c "from models import *; convert('cfg/yolov3.cfg', 'weights/last.pt')"`转换为darknet weights去除掉epoch信息，使用darknet weights从epoch 0开始稀疏训练。
+If you have any questions about the model pruning part, you can also ask questions here  [yolov3-channel-and-layer-pruning](https://github.com/tanluren/yolov3-channel-and-layer-pruning)
+[tanluren](https://github.com/tanluren)and [zbyuan](https://github.com/zbyuan)will be more professional.I only used part of the pruning strategy and share the pruning results here.
+
+### Sparsity training
+Note: You could use `python -c "from models import *; convert('cfg/yolov3.cfg', 'weights/last.pt')"` to convert .pt file to .weights file.
+
+.pt file will include epoch information.If you convert it to .weights,you could train model from epoch 0.
+
 
 ```
 python train.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights weights/last.weights --epochs 300 --batch-size 32 -sr --s 0.001 --prune 1
 ```
 
-注意事项：
+**Important note！**：
 
-- 训练过程中尽量不要中断，一次性训练完。  [ultralytics/yolov3](https://github.com/ultralytics/yolov3)存在中断训练各项指标不连续，大幅下滑的问题。
+-Try not to interrupt the training process and finish the training at one time. [ultralytics/yolov3](https://github.com/ultralytics/yolov3) has the problem of discontinuity and sharp decline in various indicators of interrupted training.
 
-- 稀疏训练过程中，mAP@0.5会先逐渐降低，在训练后期学习率降低后会慢慢升回来。可以先将s设置为0.001，如果前几个epoch mAP@0.5大幅下滑，P ，R，mAP@0.5 三个指标中甚至会出现降到了0的情况，那就调小s的值，如0.0001，但这也意味着可能需要更多的epoch才能充分稀疏化
+-During sparse training, mAP@0.5 will gradually decrease first, and will slowly rise back after the learning rate decreases in the later stage of training. You can first set s to 0.001. If mAP@0.5 drops sharply in the first few epochs, and P, R, and mAP@0.5 may even drop to 0, then adjust the value of s to a smaller value, such as 0.0001, But this also means that more epochs may be needed to fully sparse
 
-  下图是我对YOLOv4模型稀疏训练的tensorboard图
+ The picture below is my tensorboard diagram of the sparse training of the YOLOv4 model
 
   ![image-20201114103527008](assets/image-20201114103527008.png)
 
-​       稀疏训练前期虽然mAP有下滑，但最低也保持在了0.4以上，说明选择的s值是比较合适的，但在230个epoch时训练出现了异常，P陡增，R陡降（一度趋近于0），mAP@0.5也大幅度下滑。这样的情况在训练中后期正常情况下不会出现，即使遇到了我这样的情况也不用慌，如果各项指标有恢复正常趋势就没有影响。如果迟迟恢复不了那可能需要重新训练了。
+Although mAP declined in the early stage of sparse training, the minimum remained above 0.4, indicating that the selected s value was appropriate. However, training was abnormal at 230 epochs, P increased sharply, and R decreased sharply (at one time it was close to 0 ), mAP@0.5 also fell sharply. This kind of situation will not appear under normal circumstances in the middle and late stages of training. Even if you encounter a situation like mine, don't panic. If the various indicators have a tendency to return to normal, it will have no effect. If it can't recover after a delay, you may need to retrain.
 
-- 参数 epochs我一般都设置300以保证充分稀疏化，可以根据自己数据集的情况进行调整，稀疏化不充分将极大地影响后续剪枝效果。 
+-I generally set the parameter epochs to 300 to ensure sufficient sparseness. You can adjust it according to your own data set. Insufficient sparseness will greatly affect the subsequent pruning effect.
 
-- 可以通过观察tensorboard中HISTOGRAMS下的bn_weights/hist 图观察训练过程中是否成功进行了稀疏化。
+-By observing the bn_weights/hist graph under HISTOGRAMS in tensorboard, you can observe whether the sparsity is successfully performed during training.
 
-  可以看到在稀疏过程Gmma大部分逐渐被压到接近0。
+   It can be seen that most of the Gmma is gradually pressed to close to 0 during sparsity training .
 
 ![image-20201114105332649](assets/image-20201114105332649.png)
 
-- 通过tensorboard中HISTOGRAMS下的稀疏训练后的各个BN层的Gmma权重分布图（在最后一个epoch完成后才会生成）来判断是否充分稀疏化。
+- The Gmma weight distribution map of each BN layer after the sparse training under HISTOGRAMS in tensorboard (generated after the last epoch is completed) is used to determine whether the sparseness is sufficient.
 
-下图是YOLOv4进行300个epoch的稀疏训练后的结果，可以看到绝大部分的Gmma权重都趋于0，越趋近于0稀疏化越充分。下图已经可以认为是能够接受的稀疏化结果，仅供参考。
+The figure below is the result of YOLOv4's sparse training for 300 epochs. It can be seen that most of the Gmma weights tend to 0, and the closer to 0 the more sparseness is. The following figure can already be considered an acceptable sparseness result and is for reference only.
 
 ![image-20201114105904566](assets/image-20201114105904566.png)
 
-tensorboard也提供了稀疏训练前的BN层的Gmma权重分布图，可以作为对比：
+tensorboard also provides the Gmma weight distribution map of the BN layer before sparse training, which can be used as a comparison：
 
 ![image-20201114110122310](assets/image-20201114110122310.png)
 
 
 
-在稀疏训练后，YOLOv3-SPP 的mAP@0.5下降了4个点，YOLOv4下降了7个点。
+After sparsity training, mAP@0.5 of YOLOv3-SPP dropped by 4 points, and YOLOv4 dropped by 7 points.
 
-​                                      **YOLOv3-SPP稀疏训练（Sparsity training）模型参数**
+​ **YOLOv3-SPP after sparsity training**
 
 | Model              | P     | R    | mAP@0.5 |
 | ------------------ | ----- | ---- | ------- |
 | Sparsity  training | 0.525 | 0.67 | 0.624   |
 
-​                                      **YOLOv4稀疏训练（sparsity training）模型参数**
+​  **YOLOv4 after sparsity training**
 
 | Model              | P     | R     | mAP@0.5 |
 | ------------------ | ----- | ----- | ------- |
@@ -107,21 +113,23 @@ tensorboard也提供了稀疏训练前的BN层的Gmma权重分布图，可以作
 
 
 
-### 剪枝
+### Model pruning
 
-充分稀疏化后就可以开始剪枝，剪枝可以分为通道剪枝和层剪枝，均是基于BN层Gmma权重评价，所以稀疏训练是否充分将直接影响剪枝的效果。通道剪枝大幅减少了模型参数数量，权重文件大小，在桌面GPU设备上提速效果可能不如在嵌入式设备上明显。层剪枝有更加普适的加速效果。剪枝完成后进行模型微调来恢复精度。
+Pruning can be started after sufficient sparseness. Pruning can be divided into channel pruning and layer pruning, both of which are evaluated based on the Gmma weight of the BN layer, so whether the sparse training is sufficient will directly affect the effect of pruning. Channel pruning greatly reduces the number of model parameters and the size of weight files. The speed-up effect on desktop GPU devices may not be as obvious as on embedded devices. Layer pruning has a more universal acceleration effect. After the pruning is complete, fine-tune the model to restore accuracy.
 
-下面以YOLOv3-SPP与YOLOv4为例介绍如何寻找合适的剪枝点（即在尽可能大的剪枝力度下也保持较高的mAP@0.5），姑且称其为“最佳剪枝点”：
+The following uses YOLOv3-SPP and YOLOv4 as examples to introduce how to find a suitable pruning point (maintain a high mAP@0.5 under the greatest possible pruning force), and i call it the "optimal pruning point":
 
-**通道剪枝**：
+**channel pruing**：
 
 ```
 python slim_prune.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights weights/last.pt --global_percent 0.8 --layer_keep 0.01
 ```
 
-在设置全局通道剪枝比例（Global percent）时候，可以选取先大间隔再逐渐细分逼近“最佳剪枝点”的策略，如Global percent先取0.7，0.8，0.9。发现取0.7与0.8时候，模型获得了压缩效果的同时精度并没有严重下滑，甚至还会稍稍超过稀疏后的模型，但取0.9时P大幅上升，R和mAP@0.5大幅下滑，可以推测Global percent取0.9时，刚刚超过“最佳剪枝点”，所以逐渐细分取Global percent为0.88，0.89，发现保留三位小数，Global percent取0.88与0.89时的参数相同，模型精度与稀疏后的模型相比几乎没有下滑，但取0.89时会有更佳的压缩效果。若取Global percent为0.91，0.92，0.93，可以发现，取0.9时，P已经上升至极限1，R与mAP@0.5逼近0，在超越这个极限（即Global percent大于0.91）后，P,R，mAP@0.5均无限逼近0。这也意味着已经把起关键作用通道剪掉了。所以可以确定当Global percent取0.89时为“最佳剪枝点”
+When setting the global channel pruning ratio (Global percent), you can choose a strategy of large intervals and then gradually subdividing to approach the "optimal pruning point". For example, the Global percent first takes 0.7, 0.8, and 0.9. It is found that when 0.7 and 0.8 are taken, the model obtains the compression effect while the accuracy does not decline seriously, and even slightly exceeds the model after spasity training. However, when taking 0.9, P rises sharply, and R and mAP@0.5 drop sharply. It can be inferred that When Global percent is 0.9, it just exceeds the "optimal pruning point", so the Global percent is gradually subdivided into 0.88 and 0.89.And when the Global percent is 0.88 and 0.89,the parameters are the same with three decimal places retained. And the model accuracy is very close to  model after spasity training,but 0.89 will have a better compression effect. If we take Global percent as 0.91, 0.92, 0.93, we can find that when we take 0.9, P has risen to the limit 1, and R and mAP@0.5 are close to 0. After this limit is exceeded (that means the Global percent is greater than 0.91), P, R, mAP@0.5 is infinitely close to 0. This also means that the key channels have been cut off.
 
-​                                       **YOLOv3-SPP稀疏后模型在不同全局通道剪枝比例下模型参数**
+ So it can be determined that when the Global percent is 0.89, it is the "optimal pruning point"
+
+​ **YOLOv3-SPP's parameters of the model after spasity training under different global channel pruning scales**
 
 | Global  percent | P     | R       | mAP@0.5 | Params | Size of   .weights | Inference_time  (Tesla  P100) | BFLOPS |
 | --------------- | ----- | ------- | ------- | ------ | ------------------ | ----------------------------- | ------ |
@@ -136,7 +144,7 @@ python slim_prune.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights wei
 
  
 
-​                                            **YOLOv4稀疏后模型在不同全局通道剪枝比例下模型参数**
+**YOLOv4's parameters of the model after spasity training under different global channel pruning scales**
 
 | Global  percent | P     | R       | mAP@0.5 | Params | Size of   .weights | Inference_time  (Tesla T4) | BFLOPS |
 | --------------- | ----- | ------- | ------- | ------ | ------------------ | -------------------------- | ------ |
@@ -151,15 +159,15 @@ python slim_prune.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights wei
 | 0.89            | 0.787 | 0.0634  | 0.204   | 1.3M   | 5.36M              | 16.5ms                     | 8.306  |
 | 0.9             | 0.851 | 0.00079 | 0.0329  | 1.2M   | 4.79M              | 16.5ms                     | 7.927  |
 
-同理，可以判断Global percent取0.88时为通道剪枝的“最佳剪枝点”。
+In the same way, it can be judged that when the Global percent is 0.88, it is the "optimal pruning point" for channel pruning.
 
 
 
-在通道剪枝的基础下，可以进行层剪枝。
+After channel pruning, we could perform layer pruning.
 
 
 
-**层剪枝**：
+**layer prunine**：
 
 ```
 python layer_prune.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights weights/last.pt --shortcuts 12
@@ -167,9 +175,8 @@ python layer_prune.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights we
 
  
 
-参数shortcuts 就是剪掉的Resunit数量，即下表中的Cut Resunit参数。
-
-​                                **YOLOv3-SPP-Global-Percent0.89在不同层剪枝力度下的模型参数**    
+The parameter shortcuts is the number of cut Resunits, which is the **Cut Resunit** parameter in the table below.
+​                                **YOLOv3-SPP-Global-Percent0.89's parameters under different layer pruning forces**    
 
 | Cut  Resunit | P     | R      | mAP@0.5 | Params | Size of   .weights | Inference_time  (Tesla  P100) | BFLOPS |
 | ------------ | ----- | ------ | ------- | ------ | ------------------ | ----------------------------- | ------ |
@@ -179,11 +186,12 @@ python layer_prune.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights we
 | 19           | 0.561 | 0.0582 | 0.108   | 2.0M   | 7.82M              | 8.9ms                         | 10.06  |
 | 20           | 0.631 | 0.0349 | 0.0964  | 1.9M   | 7.43M              | 8.2ms                         | 9.93   |
 
-分析上表可以发现，每多剪一个Res unit，P都会增加，R和mAP@0.5都会下滑，这也符合通道剪枝时所介绍的理论预期。一般来说，一个好的模型P与R应该都在一个较高水平且较为接近。当剪掉18个Res unit时候，R与mAP@0.5都出现了大幅度的下滑，且此时R与P已经有较大的差距，所以此时已经超过了最佳剪枝点，如果再进一步加大剪枝掉的Res unit数量，R与mAP@0.5已经开始向0逼近。为了最大化加速效果，应该剪掉尽可能多的Res unit，而剪掉17个Res unit（共51个层）显然是尽可能保持模型精度的最佳选择即“最佳剪枝点”。
+Analyzing the above table, it can be found that for each additional Res unit cut, P will increase, and R and mAP@0.5 will fall. This is also in line with the theoretical expectations introduced during channel pruning. Generally speaking, a good model P and R should be at a higher level and closer. When 18 Resunits are cut off, both R and mAP@0.5 have dropped significantly, and there is already a large gap between R and P at this time, so the optimal pruning point has been exceeded at this time. If you go further Increase the number of Resunits pruned, R and mAP@0.5 have begun to approach 0. In order to maximize the acceleration effect, you should cut off as many Resunits as possible, and cutting off 17 Resunits (51 layers in total) is obviously the best choice to maintain the accuracy of the model as much as possible, that is the "optimal pruning point".
 
-同时Inference_time与baseline模型相比也体现了层剪枝非常明显的加速效果。
 
-​                                    **YOLOv4-Global Percent0.88在不同层剪枝力度下的模型参数**    
+At the same time, Inference_time also reflects the obvious acceleration effect of layer pruning compared with the baseline model.
+
+**YOLOv4-Global Percent0.88's parameters under different layer pruning forces**    
 
 | Cut  Resunit | P     | R      | mAP@0.5 | Params | Size of   .weights | Inference_time  (Tesla T4) | BFLOPS |
 | ------------ | ----- | ------ | ------- | ------ | ------------------ | -------------------------- | ------ |
@@ -193,21 +201,21 @@ python layer_prune.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights we
 | 19           | 0.781 | 0.0426 | 0.121   | 1.3M   | 5.22M              | 10.5ms                     | 7.219  |
 | 20           | 0.765 | 0.0113 | 0.055   | 1.2    | 4.94M              | 10.4ms                     | 6.817  |
 
-同理可以判断，全局通道剪枝比例0.88，剪掉18个Res unit（即剪掉54个层）为该YOLOv4的“最佳剪枝点”。
+In the same way, it can be judged that the global channel pruning ratio is 0.88, and 18 Res units are cut (that is, 54 layers are cut) is the "optimal pruning point" of YOLOv4.
 
 
 
-### 模型微调
+### Model fine-tuning
 
 ```
 python train.py --cfg cfg/prune_0.85_my_cfg.cfg --data data/my_data.data --weights weights/prune_0.85_last.weights --epochs 100 --batch-size 32
 ```
 
-在模型的前几个epoch设置了warmup，这有助于剪枝后模型的精度恢复，默认为6个，如果觉得偏多可以自行修改train.py代码。
+Warmup is set in the first few epochs of the model, which helps to restore the accuracy of the model after pruning. The default is 6, if you think it is too much, you can modify the train.py code by yourself.
 
-我使用默认的6个epoch 的warmup，微调的结果如下：
+use the default warmup of 6 epochs, and the results of fine-tuning are as follows:
 
-​                                          **YOLOv3-SPP baseline模型与剪枝微调后模型参数对比**
+ **Comparison of YOLOv3-SPP baseline model and the model after pruning and fine-tuning**
 
 | Model           | P     | R     | mAP@0.5 | Params | Size of   .weights | Inference_time  (Tesla  P100) | BFLOPS |
 | --------------- | ----- | ----- | ------- | ------ | ------------------ | ----------------------------- | ------ |
@@ -216,15 +224,15 @@ python train.py --cfg cfg/prune_0.85_my_cfg.cfg --data data/my_data.data --weigh
 
 ![image-20201114113556530](assets/image-20201114113556530.png)
 
-​      **YOLOv3-SPP剪枝后模型BN层权重绝对值分布图（左）微调后模型BN层权重绝对值分布图（右）**
+**Distribution map of the absolute value of the weight of the BN layer of the model after YOLOv3-SPP pruning (left) and after fine-tuning (right)**
 
 
 
-至此完成了YOLOv3-SPP的模型剪枝全过程。经过模型剪枝，模型精度损失3个点，而模型参数总量与权重文件大小减少**96.4%**，模型BFLOPS减少**82%**,在Tesla P100 GPU上推理速度提升**44%**。
+So far, the whole process of model pruning of YOLOv3-SPP is completed. After model pruning, the model accuracy loses 3 points, and the total model parameters and weight file size are reduced by **96.4%**. Model BFLOPS is reduced by **82%**, and the inference speed on Tesla P100 GPU is increased by **44%**.
 
 
 
-​                                                  **YOLOv4 baseline模型与剪枝微调后模型参数对比**
+ **Comparison of YOLOv4 baseline model and the model after pruning and fine-tuning**
 
 | Model           | P     | R     | mAP@0.5 | Params | Size of   .weights | Inference_time  (Tesla T4) | BFLOPS |
 | --------------- | ----- | ----- | ------- | ------ | ------------------ | -------------------------- | ------ |
@@ -233,16 +241,22 @@ python train.py --cfg cfg/prune_0.85_my_cfg.cfg --data data/my_data.data --weigh
 
  ![image-20201114113814882](assets/image-20201114113814882.png)
 
-​           **YOLOv4剪枝后模型BN层权重绝对值分布图（左）微调后模型BN层权重绝对值分布图（右）**
+​ **Distribution map of the absolute value of the weight of the BN layer of the model after YOLOv4 pruning (left) and after fine-tuning (right)**
 
 至此完成了YOLOv4的模型剪枝工作，模型精度损失7个点，模型参数量与模型权重文件大小减少**98%**，BFLOPS减少**87%**，在Tesla T4 GPU上推理速度提升**61%**。
+So far, the whole process of model pruning of YOLOv4 is completed. After model pruning, the model accuracy loses 7 points, and the total model parameters and weight file size are reduced by **98%**. Model BFLOPS is reduced by **87%**, and the inference speed on Tesla T4 GPU is increased by **61%**.
+
+
+ ### Deployment of the model after pruning on OpenVINO
+
+There are many optimization algorithms for the YOLO model, but because the model is converted to the OpenVINO IR model, tensorflow1.x based on the static graph design is used, which makes it necessary to adjust the tensorflow code as long as the model structure is changed. In order to simplify this process, I made a tool to analyze the cfg file of the pruned model and generate tensorflow code. With this tool, the pruned model can be quickly deployed in OpenVINO. 
+
+Repositories: https://github.com/TNTWEN/OpenVINO-YOLO-Automatic-Generation
+
+Under OpenVINO, the pruned model can get a 2~3 times increase in frame rate for inference using intel CPU, GPU, HDDL, and NCS2. We can use video splicing, four channels of 416×416 videos are spliced into 832×832, so that OpenVINO four channels of video can simultaneously perform YOLO and ensure basic real-time requirements.
+
+And this tool has the potential to be compatible with other YOLO optimization algorithms. It only needs to provide the cfg file and weight file of the optimized model to complete the model conversion.
 
 
 
- ### 剪枝后模型在OpenVINO的部署 
-
-对于YOLO模型的优化算法有很多，但由于将模型转换到OpenVINO的IR模型时，使用到了基于静态图设计的tensorflow1.x，这使得只要对模型结构进行了更改，就要去调整tensorflow代码。为了简化这一过程，我制作了一个解析剪枝后模型的cfg文件，生成tensorflow代码的工具，使用此工具可以迅速将剪枝后的模型在OpenVINO进行部署。 项目地址： https://github.com/TNTWEN/OpenVINO-YOLO-Automatic-Generation
-
-剪枝后的模型在OpenVINO下，使用intel CPU,GPU,HDDL ,NCS2进行推理均可获得2~3倍的帧率提升。实测可以通过视频拼接的方式，四路416×416的视频拼接为832×832，以实现OpenVINO 四路视频同时进行YOLO目标检测，并且保障基本的实时性需求。
-
-并且此工具有兼容其他YOLO优化算法的潜力，只需要提供优化后模型的cfg文件和权重文件就可以完成模型转换。
+Thank you for your use and hope it will help you!
