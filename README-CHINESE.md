@@ -6,7 +6,7 @@
 
 大致流程如下：
 
-<img src="assets/image-20201113214025134.png" alt="image-20201113214025134" style="zoom:50%;" />
+  ![image-process](assets/ch-process.jpg)
 
 
 
