@@ -22,8 +22,9 @@ Note: The data set I used is the two classes of people + car extracted by COCO20
 Basic training is to train with your own dataset normally, and train the model to the appropriate accuracy。
 
 Recommended:
-- https://github.com/ultralytics/yolov3 
-- The pruning code used below also supports basic training
+- The pruning code used below also supports basic training ★
+- https://github.com/ultralytics/yolov3/tree/archive 
+
 
 Note: As the above-mentioned projects do not support YOLOv4 very well, it may cause the training result of YOLOv4 to be slightly worse.
 

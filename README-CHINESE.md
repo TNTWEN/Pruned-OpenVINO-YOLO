@@ -22,8 +22,10 @@
 
 推荐使用：
 
-- https://github.com/ultralytics/yolov3 
-- 下面使用的剪枝代码同样支持基础训练 
+- 下面使用的剪枝代码同样支持基础训练 ★
+- https://github.com/ultralytics/yolov3/tree/archive
+
+
 
 由于上述项目对YOLOv4的支持不是很完备,可能会导致YOLOv4的训练效果稍差一些。
 
