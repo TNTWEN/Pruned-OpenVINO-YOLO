@@ -15,6 +15,12 @@ The following takes the YOLOv3-SPP and YOLOv4 models as examples to introduce th
 
 Note: The data set I used is the two classes of people + car extracted by COCO2014 and the UA-DETRAC dataset I picked and labeled. There are 54647 training sets and 22998 test sets.
 
+## development log
+<details><summary> <b>Expand</b> </summary>
+* `2021-2-25` -  Support yolov4-tiny and yolov4-tiny-3l.Please use https://github.com/tanluren/yolov3-channel-and-layer-pruning to prune yolov4-tiny and yolov4-tiny-3l model and https://github.com/TNTWEN/OpenVINO-YOLO-Automatic-Generation/tree/master/yolov4tiny to convert weights
+
+</details>
+
 
 
 ## Baseline training
