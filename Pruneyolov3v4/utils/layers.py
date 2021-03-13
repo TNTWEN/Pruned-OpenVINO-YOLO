@@ -2,6 +2,7 @@ import torch.nn.functional as F
 
 from utils.utils import *
 
+from mish_cuda import MishCuda as Mish
 
 def make_divisible(v, divisor):
     # Function ensures all layers have a channel number that is divisible by 8
@@ -143,7 +144,3 @@ class HardSwish(nn.Module):  # https://arxiv.org/pdf/1905.02244.pdf
     def forward(self, x):
         return x * F.hardtanh(x + 3, 0., 6., True) / 6.
 
-
-class Mish(nn.Module):  # https://github.com/digantamisra98/Mish
-    def forward(self, x):
-        return x * F.softplus(x).tanh()
