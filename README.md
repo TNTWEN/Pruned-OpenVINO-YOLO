@@ -23,6 +23,7 @@ Note: The data set I used is the two classes of people + car extracted by COCO20
  
 * `2021-2-25` -  Support yolov4-tiny and yolov4-tiny-3l.Please use https://github.com/tanluren/yolov3-channel-and-layer-pruning to prune yolov4-tiny and yolov4-tiny-3l model and https://github.com/TNTWEN/OpenVINO-YOLO-Automatic-Generation/tree/master/yolov4tiny to convert weights
 
+* `2021-3-13` -   Update Mish-cuda support.Enhance the adaptability of the code to yolov4(train faster, lower memory occupation)
 </details>
 
 
