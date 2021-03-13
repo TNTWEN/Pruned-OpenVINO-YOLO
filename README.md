@@ -2,7 +2,7 @@
 [简体中文](https://github.com/TNTWEN/Pruned-OpenVINO-YOLO/blob/main/README-CHINESE.md)
 
 ## Prerequisite
-Install mish_cuda first:
+Install mish-cuda first:
 https://github.com/JunnYu/mish-cuda
 ## Introduction
 
