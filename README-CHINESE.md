@@ -1,5 +1,7 @@
 # Pruned-OpenVINO-YOLO
 
+## 环境准备
+安装mish-cuda：https://github.com/JunnYu/mish-cuda
 ## 简介
 
 在OpenVINO 上部署YOLO目标检测算法时，完整版的模型帧率低，而tiny模型精度低，稳定性差。完整版的模型结构往往是为了能够在较复杂的场景检测80个甚至更多类别而设计，而在我们实际使用中，往往只有几个类别且场景没那么复杂。本教程将分享如何对YOLOv3/v4模型进行剪枝优化，再于OpenVINO部署，在很少损失精度的情况下在intel推理设备上获得数倍的帧率提升。
