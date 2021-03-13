@@ -1,6 +1,9 @@
 # Pruned-OpenVINO-YOLO
 [简体中文](https://github.com/TNTWEN/Pruned-OpenVINO-YOLO/blob/main/README-CHINESE.md)
 
+## Prerequisite
+Install mish_cuda first:
+https://github.com/JunnYu/mish-cuda
 ## Introduction
 
 When deploying YOLOv3/v4 on OpenVINO, the full version of the model has low FPS, while the tiny model has low accuracy and poor stability. The full version of the model structure is often designed to be able to detect 80 or more classes in more complex scenes. In our actual use, there are often only a few classes and the scenes are not that complicated. This tutorial will share how to  prune YOLOv3/v4 model, and then deploy it on OpenVINO. With little loss of accuracy, the frame rate can be increased by several times on the intel inference devices.On the intel GPU device, it can even realize the simultaneous inference of four channels of video and guarantee the basic real-time requirements
