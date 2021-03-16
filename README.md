@@ -5,7 +5,7 @@
 Install mish-cuda first:
 https://github.com/JunnYu/mish-cuda
 
-## development log
+## Development log
 <details><summary> <b>Expand</b> </summary>
  
 * `2021-2-25` -  Support yolov4-tiny and yolov4-tiny-3l.Please use https://github.com/tanluren/yolov3-channel-and-layer-pruning to prune yolov4-tiny and yolov4-tiny-3l model and https://github.com/TNTWEN/OpenVINO-YOLO-Automatic-Generation/tree/master/yolov4tiny to convert weights
