@@ -4,6 +4,15 @@
 ## Prerequisite
 Install mish-cuda first:
 https://github.com/JunnYu/mish-cuda
+
+## development log
+<details><summary> <b>Expand</b> </summary>
+ 
+* `2021-2-25` -  Support yolov4-tiny and yolov4-tiny-3l.Please use https://github.com/tanluren/yolov3-channel-and-layer-pruning to prune yolov4-tiny and yolov4-tiny-3l model and https://github.com/TNTWEN/OpenVINO-YOLO-Automatic-Generation/tree/master/yolov4tiny to convert weights
+
+* `2021-3-13` -   Update Mish-cuda support.Enhance the adaptability of the code to yolov4(train faster, lower memory occupation)
+</details>
+
 ## Introduction
 
 When deploying YOLOv3/v4 on OpenVINO, the full version of the model has low FPS, while the tiny model has low accuracy and poor stability. The full version of the model structure is often designed to be able to detect 80 or more classes in more complex scenes. In our actual use, there are often only a few classes and the scenes are not that complicated. This tutorial will share how to  prune YOLOv3/v4 model, and then deploy it on OpenVINO. With little loss of accuracy, the frame rate can be increased by several times on the intel inference devices.On the intel GPU device, it can even realize the simultaneous inference of four channels of video and guarantee the basic real-time requirements
@@ -18,13 +27,6 @@ The following takes the YOLOv3-SPP and YOLOv4 models as examples to introduce th
 
 Note: The data set I used is the two classes of people + car extracted by COCO2014 and the UA-DETRAC dataset I picked and labeled. There are 54647 training sets and 22998 test sets.
 
-## development log
-<details><summary> <b>Expand</b> </summary>
- 
-* `2021-2-25` -  Support yolov4-tiny and yolov4-tiny-3l.Please use https://github.com/tanluren/yolov3-channel-and-layer-pruning to prune yolov4-tiny and yolov4-tiny-3l model and https://github.com/TNTWEN/OpenVINO-YOLO-Automatic-Generation/tree/master/yolov4tiny to convert weights
-
-* `2021-3-13` -   Update Mish-cuda support.Enhance the adaptability of the code to yolov4(train faster, lower memory occupation)
-</details>
 
 
 
