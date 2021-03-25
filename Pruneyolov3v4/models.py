@@ -39,7 +39,7 @@ def create_modules(module_defs, img_size, cfg):
                                                        padding=k // 2 if mdef['pad'] else 0,
                                                        groups=mdef['groups'] if 'groups' in mdef else 1,
                                                        bias=not bn))#https://blog.csdn.net/u013289254/article/details/98785869 接BN层，conv不必偏置值
-            else:  # multiple-size conv 还未遇到过,先挖个坑
+            else:  
                 modules.add_module('MixConv2d', MixConv2d(in_ch=output_filters[-1],
                                                           out_ch=filters,
                                                           k=k,
@@ -58,7 +58,7 @@ def create_modules(module_defs, img_size, cfg):
             elif mdef['activation'] == 'mish':
                 modules.add_module('activation', Mish())
 
-        elif mdef['type'] == 'BatchNorm2d':#挖坑
+        elif mdef['type'] == 'BatchNorm2d':
             filters = output_filters[-1]
             modules = nn.BatchNorm2d(filters, momentum=0.03, eps=1E-4)
             if i == 0 and filters == 3:  # normalize RGB image
@@ -84,10 +84,14 @@ def create_modules(module_defs, img_size, cfg):
                 modules = nn.Upsample(scale_factor=mdef['stride'])
 
         elif mdef['type'] == 'route':  # nn.Sequential() placeholder for 'route' layer
+            groupflag=0
             layers = mdef['layers']
-            filters = sum([output_filters[l + 1 if l > 0 else l] for l in layers]) #层序号从0开始计算，正数需要要+1,负数直接当索引
-            routs.extend([i + l if l < 0 else l for l in layers])#迭代的添加每一个元素到list
-            modules = FeatureConcat(layers=layers)#自定义层，参数传递给__init__.具体操作在forward中，但需要在整体forward时候，给参数给子forward才可
+            filters = sum([output_filters[i + 1 if i > 0 else i] for i in layers])
+            if 'groups' in mdef:
+                filters = filters // 2
+                groupflag = 1
+            routs.extend([l if l > 0 else l + i for l in layers])
+            modules = FeatureConcat(layers=layers,groupflag=groupflag)#自定义层，参数传递给__init__.具体操作在forward中，但需要在整体forward时候，给参数给子forward才可
 
         elif mdef['type'] == 'shortcut':  # nn.Sequential() placeholder for 'shortcut' layer
             layers = mdef['from']
@@ -370,6 +374,8 @@ def load_darknet_weights(self, weights, cutoff=-1):
         cutoff = 75
     elif file == 'yolov3-tiny.conv.15':
         cutoff = 15
+    elif file == 'yolov4-tiny.conv.29':
+        cutoff = 29
 
     # Read weights file
     with open(weights, 'rb') as f:

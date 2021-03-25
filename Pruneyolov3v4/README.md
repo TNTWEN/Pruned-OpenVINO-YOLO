@@ -1,197 +1,134 @@
-<table style="width:100%">
-  <tr>
-    <td>
-      <img src="https://user-images.githubusercontent.com/26833433/61591130-f7beea00-abc2-11e9-9dc0-d6abcf41d713.jpg">
-    </td>
-    <td align="center">
-    <a href="https://www.ultralytics.com" target="_blank">
-    <img src="https://storage.googleapis.com/ultralytics/logo/logoname1000.png" width="160"></a>
-      <img src="https://user-images.githubusercontent.com/26833433/61591093-2b4d4480-abc2-11e9-8b46-d88eb1dabba1.jpg">
-          <a href="https://itunes.apple.com/app/id1452689527" target="_blank">
-    <img src="https://user-images.githubusercontent.com/26833433/50044365-9b22ac00-0082-11e9-862f-e77aee7aa7b0.png" width="180"></a>
-    </td>
-    <td>
-      <img src="https://user-images.githubusercontent.com/26833433/61591100-55066b80-abc2-11e9-9647-52c0e045b288.jpg">
-    </td>
-  </tr>
-</table>
-
-
-## Introduction
-
-The https://github.com/ultralytics/yolov3 repo contains inference and training code for YOLOv3 in PyTorch. The code works on Linux, MacOS and Windows. Training is done on the COCO dataset by default: https://cocodataset.org/#home. **Credit to Joseph Redmon for YOLO:** https://pjreddie.com/darknet/yolo/.
-
-
-## Requirements
-
-Python 3.7 or later with all `requirements.txt` dependencies installed, including `torch >= 1.5`. To install run:
-```bash
-$ pip install -U -r requirements.txt
-```
-
-
-## Tutorials
-
-* [Notebook](https://github.com/ultralytics/yolov3/blob/master/tutorial.ipynb) <a href="https://colab.research.google.com/github/ultralytics/yolov3/blob/master/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
-* [Train Custom Data](https://github.com/ultralytics/yolov3/wiki/Train-Custom-Data) << highly recommended
-* [GCP Quickstart](https://github.com/ultralytics/yolov3/wiki/GCP-Quickstart)
-* [Docker Quickstart Guide](https://github.com/ultralytics/yolov3/wiki/Docker-Quickstart)  ![Docker Pulls](https://img.shields.io/docker/pulls/ultralytics/yolov3?logo=docker)
-* [A TensorRT Implementation of YOLOv3 and YOLOv4](https://github.com/wang-xinyu/tensorrtx/tree/master/yolov3-spp) 
-
-
-## Training
-
-**Start Training:** `python3 train.py` to begin training after downloading COCO data with `data/get_coco2017.sh`. Each epoch trains on 117,263 images from the train and validate COCO sets, and tests on 5000 images from the COCO validate set.
-
-**Resume Training:** `python3 train.py --resume` to resume training from `weights/last.pt`.
-
-**Plot Training:** `from utils import utils; utils.plot_results()`
-
-<img src="https://user-images.githubusercontent.com/26833433/78175826-599d4800-7410-11ea-87d4-f629071838f6.png" width="900">
-
-
-### Image Augmentation
-
-`datasets.py` applies OpenCV-powered (https://opencv.org/) augmentation to the input image. We use a **mosaic dataloader** to increase image variability during training.
-
-<img src="https://user-images.githubusercontent.com/26833433/80769557-6e015d00-8b02-11ea-9c4b-69310eb2b962.jpg" width="900">
-
-
-### Speed
-
-https://cloud.google.com/deep-learning-vm/  
-**Machine type:** preemptible [n1-standard-8](https://cloud.google.com/compute/docs/machine-types) (8 vCPUs, 30 GB memory)   
-**CPU platform:** Intel Skylake  
-**GPUs:** K80 ($0.14/hr), T4 ($0.11/hr), V100 ($0.74/hr) CUDA with [Nvidia Apex](https://github.com/NVIDIA/apex) FP16/32    
-**HDD:** 300 GB SSD  
-**Dataset:** COCO train 2014 (117,263 images)  
-**Model:** `yolov3-spp.cfg`  
-**Command:**  `python3 train.py --data coco2017.data --img 416 --batch 32`
-
-GPU | n | `--batch-size` | img/s | epoch<br>time | epoch<br>cost
---- |--- |--- |--- |--- |---
-K80    |1| 32 x 2 | 11  | 175 min  | $0.41
-T4     |1<br>2| 32 x 2<br>64 x 1 | 41<br>61 | 48 min<br>32 min | $0.09<br>$0.11
-V100   |1<br>2| 32 x 2<br>64 x 1 | 122<br>**178** | 16 min<br>**11 min** | **$0.21**<br>$0.28
-2080Ti |1<br>2| 32 x 2<br>64 x 1 | 81<br>140 | 24 min<br>14 min | -<br>-
-
-
-## Inference
-
-```bash
-python3 detect.py --source ...
-```
-
-- Image:  `--source file.jpg`
-- Video:  `--source file.mp4`
-- Directory:  `--source dir/`
-- Webcam:  `--source 0`
-- RTSP stream:  `--source rtsp://170.93.143.139/rtplive/470011e600ef003a004ee33696235daa`
-- HTTP stream:  `--source http://112.50.243.8/PLTV/88888888/224/3221225900/1.m3u8`
-
-**YOLOv3:** `python3 detect.py --cfg cfg/yolov3.cfg --weights yolov3.pt`  
-<img src="https://user-images.githubusercontent.com/26833433/64067835-51d5b500-cc2f-11e9-982e-843f7f9a6ea2.jpg" width="500">
-
-**YOLOv3-tiny:** `python3 detect.py --cfg cfg/yolov3-tiny.cfg --weights yolov3-tiny.pt`  
-<img src="https://user-images.githubusercontent.com/26833433/64067834-51d5b500-cc2f-11e9-9357-c485b159a20b.jpg" width="500">
-
-**YOLOv3-SPP:** `python3 detect.py --cfg cfg/yolov3-spp.cfg --weights yolov3-spp.pt`  
-<img src="https://user-images.githubusercontent.com/26833433/64067833-51d5b500-cc2f-11e9-8208-6fe197809131.jpg" width="500">
-
-
-## Pretrained Checkpoints
-
-Download from: [https://drive.google.com/open?id=1LezFG5g3BCW6iYaV89B2i64cqEUZD7e0](https://drive.google.com/open?id=1LezFG5g3BCW6iYaV89B2i64cqEUZD7e0)
-
-
-## Darknet Conversion
-
-```bash
-$ git clone https://github.com/ultralytics/yolov3 && cd yolov3
-
-# convert darknet cfg/weights to pytorch model
-$ python3  -c "from models import *; convert('cfg/yolov3-spp.cfg', 'weights/yolov3-spp.weights')"
-Success: converted 'weights/yolov3-spp.weights' to 'weights/yolov3-spp.pt'
-
-# convert cfg/pytorch model to darknet weights
-$ python3  -c "from models import *; convert('cfg/yolov3-spp.cfg', 'weights/yolov3-spp.pt')"
-Success: converted 'weights/yolov3-spp.pt' to 'weights/yolov3-spp.weights'
-```
-
-
-## mAP
-
-<i></i>                      |Size |COCO mAP<br>@0.5...0.95 |COCO mAP<br>@0.5 
----                          | ---         | ---         | ---
-YOLOv3-tiny<br>YOLOv3<br>YOLOv3-SPP<br>**[YOLOv3-SPP-ultralytics](https://drive.google.com/open?id=1UcR-zVoMs7DH5dj3N1bswkiQTA4dmKF4)** |320 |14.0<br>28.7<br>30.5<br>**37.7** |29.1<br>51.8<br>52.3<br>**56.8**
-YOLOv3-tiny<br>YOLOv3<br>YOLOv3-SPP<br>**[YOLOv3-SPP-ultralytics](https://drive.google.com/open?id=1UcR-zVoMs7DH5dj3N1bswkiQTA4dmKF4)** |416 |16.0<br>31.2<br>33.9<br>**41.2** |33.0<br>55.4<br>56.9<br>**60.6**
-YOLOv3-tiny<br>YOLOv3<br>YOLOv3-SPP<br>**[YOLOv3-SPP-ultralytics](https://drive.google.com/open?id=1UcR-zVoMs7DH5dj3N1bswkiQTA4dmKF4)** |512 |16.6<br>32.7<br>35.6<br>**42.6** |34.9<br>57.7<br>59.5<br>**62.4**
-YOLOv3-tiny<br>YOLOv3<br>YOLOv3-SPP<br>**[YOLOv3-SPP-ultralytics](https://drive.google.com/open?id=1UcR-zVoMs7DH5dj3N1bswkiQTA4dmKF4)** |608 |16.6<br>33.1<br>37.0<br>**43.1** |35.4<br>58.2<br>60.7<br>**62.8**
-
-- mAP@0.5 run at `--iou-thr 0.5`, mAP@0.5...0.95 run at `--iou-thr 0.7`
-- Darknet results: https://arxiv.org/abs/1804.02767
-
-```bash
-$ python3 test.py --cfg yolov3-spp.cfg --weights yolov3-spp-ultralytics.pt --img 640 --augment
-
-Namespace(augment=True, batch_size=16, cfg='cfg/yolov3-spp.cfg', conf_thres=0.001, data='coco2014.data', device='', img_size=640, iou_thres=0.6, save_json=True, single_cls=False, task='test', weights='weight
-Using CUDA device0 _CudaDeviceProperties(name='Tesla V100-SXM2-16GB', total_memory=16130MB)
-
-               Class    Images   Targets         P         R   mAP@0.5        F1: 100%|█████████| 313/313 [03:00<00:00,  1.74it/s]
-                 all     5e+03  3.51e+04     0.375     0.743      0.64     0.492
-
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.456
- Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.647
- Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.496
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.263
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.501
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.596
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.361
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.597
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.666
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.492
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.719
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.810
-
-Speed: 17.5/2.3/19.9 ms inference/NMS/total per 640x640 image at batch-size 16
-```
-<!-- Speed: 11.4/2.2/13.6 ms inference/NMS/total per 608x608 image at batch-size 1 -->
-
-
-## Reproduce Our Results
-
-Run commands below. Training takes about one week on a 2080Ti per model.
-```bash
-$ python train.py --data coco2014.data --weights '' --batch-size 16 --cfg yolov3-spp.cfg
-$ python train.py --data coco2014.data --weights '' --batch-size 32 --cfg yolov3-tiny.cfg
-```
-<img src="https://user-images.githubusercontent.com/26833433/80831822-57a9de80-8ba0-11ea-9684-c47afb0432dc.png" width="900">
-
-
-## Reproduce Our Environment
-
-To access an up-to-date working environment (with all dependencies including CUDA/CUDNN, Python and PyTorch preinstalled), consider a:
-
-- **GCP** Deep Learning VM with $300 free credit offer: See our [GCP Quickstart Guide](https://github.com/ultralytics/yolov3/wiki/GCP-Quickstart) 
-- **Google Colab Notebook** with 12 hours of free GPU time. <a href="https://colab.research.google.com/github/ultralytics/yolov3/blob/master/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
-- **Docker Image** https://hub.docker.com/r/ultralytics/yolov3. See [Docker Quickstart Guide](https://github.com/ultralytics/yolov3/wiki/Docker-Quickstart) ![Docker Pulls](https://img.shields.io/docker/pulls/ultralytics/yolov3?logo=docker)
-
-
-## Citation
-
-[![DOI](https://zenodo.org/badge/146165888.svg)](https://zenodo.org/badge/latestdoi/146165888)
-
-
-## About Us
-
-Ultralytics is a U.S.-based particle physics and AI startup with over 6 years of expertise supporting government, academic and business clients. We offer a wide range of vision AI services, spanning from simple expert advice up to delivery of fully customized, end-to-end production solutions, including:
-- **Cloud-based AI** systems operating on **hundreds of HD video streams in realtime.**
-- **Edge AI** integrated into custom iOS and Android apps for realtime **30 FPS video inference.**
-- **Custom data training**, hyperparameter evolution, and model exportation to any destination.
-
-For business inquiries and professional support requests please visit us at https://www.ultralytics.com. 
-
-
-## Contact
-
-**Issues should be raised directly in the repository.** For business inquiries or professional support requests please visit https://www.ultralytics.com or email Glenn Jocher at glenn.jocher@ultralytics.com. 
+# yolov3-channel-and-layer-pruning
+本仓库在[tanluren/yolov3-channel-and-layer-pruning](https://github.com/tanluren/yolov3-channel-and-layer-pruning)项目基础上改进，使用方法相同，更新日志如下：
+
+1. 底层更新为基于新版本[ultralytics/yolov3](https://github.com/ultralytics/yolov3)实现
+2. 加入mish-cuda支持：请先安装https://github.com/JunnYu/mish-cuda ，测试平台：WIN10+RTX3090+CUDA11.2
+3. 支持yolov4-tiny与yolov4-tiny-3l的通道剪枝。
+4. 提示：pytorch 与darknet训练方式存在差异，若想在OpenVINO端部署，为了更好的检测效果，请将剪枝后的cfg在[darknet](https://github.com/AlexeyAB/darknet)框架下不加载预训练权重进行微调。
+
+
+
+
+
+
+
+------
+
+以下为[tanluren/yolov3-channel-and-layer-pruning](https://github.com/tanluren/yolov3-channel-and-layer-pruning)README内容，
+
+本项目以[ultralytics/yolov3](https://github.com/ultralytics/yolov3)为基础实现，根据论文[Learning Efficient Convolutional Networks Through Network Slimming (ICCV 2017)](http://openaccess.thecvf.com/content_iccv_2017/html/Liu_Learning_Efficient_Convolutional_ICCV_2017_paper.html)原理基于bn层Gmma系数进行通道剪枝，下面引用了几种不同的通道剪枝策略，并对原策略进行了改进，提高了剪枝率和精度；在这些工作基础上，又衍生出了层剪枝，本身通道剪枝已经大大减小了模型参数和计算量，降低了模型对资源的占用，而层剪枝可以进一步减小了计算量，并大大提高了模型推理速度；通过层剪枝和通道剪枝结合，可以压缩模型的深度和宽度，某种意义上实现了针对不同数据集的小模型搜索。<br>
+<br>
+项目的基本工作流程是，使用yolov3训练自己数据集，达到理想精度后进行稀疏训练，稀疏训练是重中之重，对需要剪枝的层对应的bn gamma系数进行大幅压缩，理想的压缩情况如下图，然后就可以对不重要的通道或者层进行剪枝，剪枝后可以对模型进行微调恢复精度，后续会写篇博客记录一些实验过程及调参经验，在此感谢[行云大佬](https://github.com/zbyuan)的讨论和合作！<br>
+<br>
+![稀疏](https://github.com/tanluren/yolov3-channel-and-layer-pruning/blob/master/data/img/1.jpg)
+
+<br>
+
+####  更新
+1.增加了对**yolov3-spp**结构的支持，基础训练可以直接使用yolov3-spp.weights初始化权重，各个层剪枝及通道剪枝脚本的使用也和yolov3一致。<br>
+2.增加了多尺度推理支持，train.py和各剪枝脚本都可以指定命令行参数, 如 --img_size 608 .<br>
+3.2019/12/06更改了层剪枝的选层策略，由最大值排序改为均值排序。<br>
+4.2019/12/08**重要**更新，增加了**知识蒸馏**策略。蒸馏是用高精度的大模型指导低精度的小模型，在结构相似的情况下效果尤为明显。而剪枝得到的小模型和原模型在结构上高度相似，非常符合蒸馏的应用条件。这里更新了一个参考Hinton大神Distilling the Knowledge in a Neural Network的蒸馏策略，原策略是针对分类模型的，但在这里也有不错的表现。调用只需要在微调的时候指定老师模型的cfg和权重即可：--t_cfg  --t_weights。最近会更新第二种针对yolo检测的知识蒸馏策略。<br>
+5.2019/12/10交流的小伙伴比较多，回答不过来，可以加群734912150 <br>
+6.2019/12/14增加了针对蒸馏的混合精度训练支持，项目中各项训练都可以使用[apex](https://github.com/NVIDIA/apex)加速,但需要先安装。使用混合精度可以加速训练，同时减轻显存占用，但训练效果可能会差一丢丢。代码默认开启了混合精度，如需关闭，可以把train.py中的mixed_precision改为False.<br>
+7.2019/12/23更新了**知识蒸馏策略二**，并默认使用二。策略二参考了论文"Learning Efficient Object Detection Models with Knowledge Distillation"，相比策略一，对分类和回归分别作了处理，分类的蒸馏和策略一差不多，回归部分会分别计算学生和老师相对target的L2距离，如果学生更远，学生会再向target学习，而不是向老师学习。调用同样是指定老师的cfg和权重即可。需要强调的是，蒸馏在这里只是辅助微调，如果注重精度优先，剪枝时尽量剪不掉点的比例，这时蒸馏的作用也不大；如果注重速度，剪枝比例较大，导致模型精度下降较多，可以结合蒸馏提升精度。<br>
+8.2019/12/27更新了两种**稀疏策略**，详看下面稀疏训练环节。<br>
+9.2020/01/02修正各剪枝版本多分辨率推理test问题，主要是把命令行参数img_size传递给test函数。<br>
+10.2020/01/04补了个[博客](https://blog.csdn.net/weixin_41397123/article/details/103828931)分享**无人机数据集visdrone**案例，演示如何压缩一个12M的无人机视角目标检测模型（标题党）。<br>
+11.2020/04/10增加了**yolov3-tiny**的剪枝支持，稀疏照旧，剪通道用slim_prune.py，不可剪层。<br>
+12.2020/4/24增加支持**yolov4**剪枝.<br>
+13.2020/4/30在datasets.py 592行添加了支持负样本训练，默认注释掉.<br>
+14.2020/7/8更新支持**yolov4-tiny**剪通道.<br>
+
+
+
+#### 基础训练
+环境配置查看requirements.txt，数据准备参考[这里](https://github.com/ultralytics/yolov3/wiki/Train-Custom-Data)，预训练权重可以从darknet官网下载。<br>
+用yolov3训练自己的数据集，修改cfg，配置好data，用yolov3.weights初始化权重。<br>
+<br>
+`python train.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights weights/yolov3.weights --epochs 100 --batch-size 32`
+
+#### 稀疏训练
+scale参数默认0.001，根据数据集，mAP,BN分布调整，数据分布广类别多的，或者稀疏时掉点厉害的适当调小s;-sr用于开启稀疏训练；--prune 0适用于prune.py，--prune 1 适用于其他剪枝策略。稀疏训练就是精度和稀疏度的博弈过程，如何寻找好的策略让稀疏后的模型保持高精度同时实现高稀疏度是值得研究的问题，大的s一般稀疏较快但精度掉的快，小的s一般稀疏较慢但精度掉的慢；配合大学习率会稀疏加快，后期小学习率有助于精度回升。<br>
+注意：训练保存的pt权重包含epoch信息，可通过`python -c "from models import *; convert('cfg/yolov3.cfg', 'weights/last.pt')"`转换为darknet weights去除掉epoch信息，使用darknet weights从epoch 0开始稀疏训练。<br>
+<br>
+`python train.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights weights/last.weights --epochs 300 --batch-size 32 -sr --s 0.001 --prune 1`
+* ##### 稀疏策略一：恒定s
+这是一开始的策略，也是默认的策略。在整个稀疏过程中，始终以恒定的s给模型添加额外的梯度，因为力度比较均匀，往往压缩度较高。但稀疏过程是个博弈过程，我们不仅想要较高的压缩度，也想要在学习率下降后恢复足够的精度，不同的s最后稀疏结果也不同，想要找到合适的s往往需要较高的时间成本。<br>
+<br>
+`bn_module.weight.grad.data.add_(s * torch.sign(bn_module.weight.data))`
+* ##### 稀疏策略二：全局s衰减
+关键代码是下面这句，在epochs的0.5阶段s衰减100倍。前提是0.5之前权重已经完成大幅压缩，这时对s衰减有助于精度快速回升，但是相应的bn会出现一定膨胀，降低压缩度，有利有弊，可以说是牺牲较大的压缩度换取较高的精度，同时减少寻找s的时间成本。当然这个0.5和100可以自己调整。注意也不能为了在前半部分加快压缩bn而大大提高s，过大的s会导致模型精度下降厉害，且s衰减后也无法恢复。如果想使用这个策略，可以在prune_utils.py中的BNOptimizer把下面这句取消注释。<br>
+<br>
+`# s = s if epoch <= opt.epochs * 0.5 else s * 0.01`
+* ##### 稀疏策略三：局部s衰减
+关键代码是下面两句，在epochs的0.5阶段开始对85%的通道保持原力度压缩，15%的通道进行s衰减100倍。这个85%是个先验知识，是由策略一稀疏后尝试剪通道几乎不掉点的最大比例，几乎不掉点指的是相对稀疏后精度；如果微调后还是不及baseline，或者说达不到精度要求，就可以使用策略三进行局部s衰减，从中间开始重新稀疏，这可以在牺牲较小压缩度情况下提高较大精度。如果想使用这个策略可以在train.py中把下面这两句取消注释，并根据自己策略一情况把0.85改为自己的比例，还有0.5和100也是可调的。策略二和三不建议一起用，除非你想做组合策略。<br>
+<br>
+`#if opt.sr and opt.prune==1 and epoch > opt.epochs * 0.5:`<br>
+`#  idx2mask = get_mask2(model, prune_idx, 0.85)`
+
+#### 通道剪枝策略一
+策略源自[Lam1360/YOLOv3-model-pruning](https://github.com/Lam1360/YOLOv3-model-pruning)，这是一种保守的策略，因为yolov3中有五组共23处shortcut连接，对应的是add操作，通道剪枝后如何保证shortcut的两个输入维度一致，这是必须考虑的问题。而Lam1360/YOLOv3-model-pruning对shortcut直连的层不进行剪枝，避免了维度处理问题，但它同样实现了较高剪枝率，对模型参数的减小有很大帮助。虽然它剪枝率最低，但是它对剪枝各细节的处理非常优雅，后面的代码也较多参考了原始项目。在本项目中还更改了它的阈值规则，可以设置更高的剪枝阈值。<br>
+<br>
+`python prune.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights weights/last.pt --percent 0.85`
+
+#### 通道剪枝策略二
+策略源自[coldlarry/YOLOv3-complete-pruning](https://github.com/coldlarry/YOLOv3-complete-pruning)，这个策略对涉及shortcut的卷积层也进行了剪枝，剪枝采用每组shortcut中第一个卷积层的mask，一共使用五种mask实现了五组shortcut相关卷积层的剪枝，进一步提高了剪枝率。本项目中对涉及shortcut的剪枝后激活偏移值处理进行了完善，并修改了阈值规则，可以设置更高剪枝率，当然剪枝率的设置和剪枝后的精度变化跟稀疏训练有很大关系，这里再次强调稀疏训练的重要性。<br>
+<br>
+`python shortcut_prune.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights weights/last.pt --percent 0.6`
+
+#### 通道剪枝策略三
+策略参考自[PengyiZhang/SlimYOLOv3](https://github.com/PengyiZhang/SlimYOLOv3)，这个策略的通道剪枝率最高，先以全局阈值找出各卷积层的mask，然后对于每组shortcut，它将相连的各卷积层的剪枝mask取并集，用merge后的mask进行剪枝，这样对每一个相关层都做了考虑，同时它还对每一个层的保留通道做了限制，实验中它的剪枝效果最好。在本项目中还对激活偏移值添加了处理，降低剪枝时的精度损失。<br>
+<br>
+`python slim_prune.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights weights/last.pt --global_percent 0.8 --layer_keep 0.01`
+
+#### 层剪枝
+这个策略是在之前的通道剪枝策略基础上衍生出来的，针对每一个shortcut层前一个CBL进行评价，对各层的Gmma均值进行排序，取最小的进行层剪枝。为保证yolov3结构完整，这里每剪一个shortcut结构，会同时剪掉一个shortcut层和它前面的两个卷积层。是的，这里只考虑剪主干中的shortcut模块。但是yolov3中有23处shortcut，剪掉8个shortcut就是剪掉了24个层，剪掉16个shortcut就是剪掉了48个层，总共有69个层的剪层空间；实验中对简单的数据集剪掉了较多shortcut而精度降低很少。<br>
+<br>
+`python layer_prune.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights weights/last.pt --shortcuts 12`
+
+#### 同时剪层和通道
+前面的通道剪枝和层剪枝已经分别压缩了模型的宽度和深度，可以自由搭配使用，甚至迭代式剪枝，调配出针对自己数据集的一副良药。这里整合了一个同时剪层和通道的脚本，方便对比剪枝效果，有需要的可以使用这个脚本进行剪枝。<br>
+<br>
+`python layer_channel_prune.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights weights/last.pt --shortcuts 12 --global_percent 0.8 --layer_keep 0.1`
+
+#### 微调finetune
+剪枝的效果好不好首先还是要看稀疏情况，而不同的剪枝策略和阈值设置在剪枝后的效果表现也不一样，有时剪枝后模型精度甚至可能上升，而一般而言剪枝会损害模型精度，这时候需要对剪枝后的模型进行微调，让精度回升。训练代码中默认了前6个epoch进行warmup，这对微调有好处，有需要的可以自行调整超参学习率。<br>
+<br>
+`python train.py --cfg cfg/prune_0.85_my_cfg.cfg --data data/my_data.data --weights weights/prune_0.85_last.weights --epochs 100 --batch-size 32`
+
+#### tensorboard实时查看训练过程
+`tensorboard --logdir runs`<br>
+<br>
+![tensorboard](https://github.com/tanluren/yolov3-channel-and-layer-pruning/blob/master/data/img/2.jpg)
+<br>
+欢迎使用和测试，有问题或者交流实验过程可以发issue或者加群734912150<br>
+
+
+#### 案例
+使用yolov3-spp训练oxfordhand数据集并剪枝。下载[数据集](http://www.robots.ox.ac.uk/~vgg/data/hands/downloads/hand_dataset.tar.gz),解压到data文件夹，运行converter.py，把得到的train.txt和valid.txt路径更新在oxfordhand.data中。通过以下代码分别进行基础训练和稀疏训练：<br>
+`python train.py --cfg cfg/yolov3-spp-hand.cfg --data data/oxfordhand.data --weights weights/yolov3-spp.weights --batch-size 20 --epochs 100`<br>
+<br>
+`python -c "from models import *; convert('cfg/yolov3.cfg', 'weights/last.pt')"`<br>
+`python train.py --cfg cfg/yolov3-spp-hand.cfg --data data/oxfordhand.data --weights weights/converted.weights --batch-size 20 --epochs 300 -sr --s 0.001 --prune 1`<br>
+<br>
+训练的情况如下图，蓝色线是基础训练，红色线是稀疏训练。其中基础训练跑了100个epoch，后半段已经出现了过拟合，最终得到的baseline模型mAP为0.84;稀疏训练以s0.001跑了300个epoch，选择的稀疏类型为prune 1全局稀疏，为包括shortcut的剪枝做准备，并且在总epochs的0.7和0.9阶段进行了Gmma为0.1的学习率衰减，稀疏过程中模型精度起伏较大，在学习率降低后精度出现了回升，最终稀疏模型mAP 0.797。<br>
+![baseline_and_sparse](https://github.com/tanluren/yolov3-channel-and-layer-pruning/blob/master/data/img/baseline_and_sparse.jpg)
+<br>
+再来看看bn的稀疏情况，代码使用tensorboard记录了参与稀疏的bn层的Gmma权重变化，下图左边看到正常训练时Gmma总体上分布在1附近类似正态分布，右边可以看到稀疏过程Gmma大部分逐渐被压到接近0，接近0的通道其输出值近似于常量，可以将其剪掉。<br>
+![bn](https://github.com/tanluren/yolov3-channel-and-layer-pruning/blob/master/data/img/bn.jpg)
+<br>
+这时候便可以进行剪枝，这里例子使用layer_channel_prune.py同时进行剪通道和剪层，这个脚本融合了slim_prune剪通道策略和layer_prune剪层策略。Global perent剪通道的全局比例为0.93，layer keep每层最低保持通道数比例为0.01，shortcuts剪了16个，相当于剪了48个层(32个CBL，16个shortcut)；下图结果可以看到剪通道后模型掉了一个点，而大小从239M压缩到5.2M，剪层后mAP掉到0.53，大小压缩到4.6M，模型参数减少了98%，推理速度也从16毫秒减到6毫秒（tesla p100测试结果）。<br>
+`python layer_channel_prune.py --cfg cfg/yolov3-spp-hand.cfg --data data/oxfordhand.data --weights weights/last.pt --global_percent 0.93 --layer_keep 0.01 --shortcuts 16`<br>
+<br>
+![prune9316](https://github.com/tanluren/yolov3-channel-and-layer-pruning/blob/master/data/img/prune9316.png)
+<br>
+鉴于模型精度出现了下跌，我们来进行微调，下面是微调50个epoch的结果，精度恢复到了0.793，bn也开始呈正态分布，这个结果相对于baseline掉了几个点，但是模型大幅压缩减少了资源占用，提高了运行速度。如果想提高精度，可以尝试降低剪枝率，比如这里只剪10个shortcut的话，同样微调50epoch精度可以回到0.81；而想追求速度的话，这里有个极端例子，全局剪0.95，层剪掉54个，模型压缩到了2.8M，推理时间降到5毫秒，而mAP降到了0，但是微调50epoch后依然回到了0.75。<br>
+<br>
+`python train.py --cfg cfg/prune_16_shortcut_prune_0.93_keep_0.01_yolov3-spp-hand.cfg --data data/oxfordhand.data --weights weights/prune_16_shortcut_prune_0.93_keep_0.01_last.weights --batch-size 52 --epochs 50`<br>
+![finetune_and_bn](https://github.com/tanluren/yolov3-channel-and-layer-pruning/blob/master/data/img/finetune_and_bn.jpg)<br>
+可以猜测，剪枝得到的cfg是针对该数据集相对合理的结构，而保留的权重可以让模型快速训练接近这个结构的能力上限，这个过程类似于一种有限范围的结构搜索。而不同的训练策略，稀疏策略，剪枝策略会得到不同的结果，相信即使是这个例子也可以进一步压缩并保持良好精度。yolov3有众多优化项目和工程项目，可以利用这个剪枝得到的cfg和weights放到其他项目中做进一步优化和应用。<br>
+[这里](https://pan.baidu.com/s/1APUfwO4L69u28Wt9gFNAYw)分享了这个例子的权重和cfg，包括baseline，稀疏，不同剪枝设置后的结果。
+
+## License
+Apache 2.0

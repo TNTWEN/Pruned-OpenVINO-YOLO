@@ -1,4 +1,4 @@
 classes=80
-train=../coco/train2017.txt
-valid=../coco/val2017.txt
-names=data/coco.names
+train=C:\Project\data\coco2017\train2017.txt
+valid=C:\Project\data\coco2017\val2017.txt
+names=data\coco.names

@@ -1,7 +1,10 @@
 # Pruned-OpenVINO-YOLO
 
 ## 环境准备
-安装mish-cuda：https://github.com/JunnYu/mish-cuda
+安装mish-cuda：https://github.com/JunnYu/mish-cuda  测试平台为WIN10+RTX3090+CUDA11.2
+
+如果在您的设备上无法安装，可以尝试https://github.com/thomasbrandon/mish-cuda并寻求更多的安装帮助
+
 ## 简介
 
 在OpenVINO 上部署YOLO目标检测算法时，完整版的模型帧率低，而tiny模型精度低，稳定性差。完整版的模型结构往往是为了能够在较复杂的场景检测80个甚至更多类别而设计，而在我们实际使用中，往往只有几个类别且场景没那么复杂。本教程将分享如何对YOLOv3/v4模型进行剪枝优化，再于OpenVINO部署，在很少损失精度的情况下在intel推理设备上获得数倍的帧率提升。
@@ -243,10 +246,12 @@ python train.py --cfg cfg/prune_0.85_my_cfg.cfg --data data/my_data.data --weigh
 
 
 
+因为pytorch版本的yolo与darknet的实现有诸多不同，所以如果发现pytorch微调的模型在OpenVINO检测并不理想，请使用剪枝后的cfg文件在darknet下不加载预训练权重进行微调，往往会取得更好的效果！
+
+
+
  ### 剪枝后模型在OpenVINO的部署 
 
 对于YOLO模型的优化算法有很多，但由于将模型转换到OpenVINO的IR模型时，使用到了基于静态图设计的tensorflow1.x，这使得只要对模型结构进行了更改，就要去调整tensorflow代码。为了简化这一过程，我制作了一个解析剪枝后模型的cfg文件，生成tensorflow代码的工具，使用此工具可以迅速将剪枝后的模型在OpenVINO进行部署。 项目地址： https://github.com/TNTWEN/OpenVINO-YOLO-Automatic-Generation
 
 剪枝后的模型在OpenVINO下，使用intel CPU,GPU,HDDL ,NCS2进行推理均可获得2~3倍的帧率提升。实测可以通过视频拼接的方式，四路416×416的视频拼接为832×832，以实现OpenVINO 四路视频同时进行YOLO目标检测，并且保障基本的实时性需求。
-
-并且此工具有兼容其他YOLO优化算法的潜力，只需要提供优化后模型的cfg文件和权重文件就可以完成模型转换。

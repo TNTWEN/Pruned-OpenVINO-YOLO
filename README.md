@@ -3,12 +3,14 @@
 
 ## Prerequisite
 Install mish-cuda first:
-https://github.com/JunnYu/mish-cuda
+https://github.com/JunnYu/mish-cuda Testing platform:WIN10+RTX3090+CUDA11.2
+
+If you can't install it on your device, you can also try https://github.com/thomasbrandon/mish-cuda
 
 ## Development log
 <details><summary> <b>Expand</b> </summary>
- 
-* `2021-2-25` -  Support yolov4-tiny and yolov4-tiny-3l.Please use https://github.com/tanluren/yolov3-channel-and-layer-pruning to prune yolov4-tiny and yolov4-tiny-3l model and https://github.com/TNTWEN/OpenVINO-YOLO-Automatic-Generation/tree/master/yolov4tiny to convert weights
+
+* `2021-2-25` -  Support yolov4-tiny and yolov4-tiny-3l.Please use https://github.com/TNTWEN/Pruned-OpenVINO-YOLO/tree/main/Pruneyolov3v4 or https://github.com/TNTWEN/yolov3-channel-and-layer-pruning to prune yolov4-tiny and yolov4-tiny-3l model (Tips：use darknet to finetune your pruned model without loading weights)and https://github.com/TNTWEN/OpenVINO-YOLO-Automatic-Generation/tree/master/yolov4tiny to convert weights
 
 * `2021-3-13` -   Update Mish-cuda support.Enhance the adaptability of the code to yolov4(train faster, lower memory occupation)
 </details>
@@ -111,13 +113,13 @@ tensorboard also provides the Gmma weight distribution map of the BN layer befor
 
 After sparsity training, mAP@0.5 of YOLOv3-SPP dropped by 4 points, and YOLOv4 dropped by 7 points.
 
-​ **YOLOv3-SPP after sparsity training**
+ **YOLOv3-SPP after sparsity training**
 
 | Model              | P     | R    | mAP@0.5 |
 | ------------------ | ----- | ---- | ------- |
 | Sparsity  training | 0.525 | 0.67 | 0.624   |
 
-​  **YOLOv4 after sparsity training**
+  **YOLOv4 after sparsity training**
 
 | Model              | P     | R     | mAP@0.5 |
 | ------------------ | ----- | ----- | ------- |
@@ -143,7 +145,7 @@ When setting the global channel pruning ratio (Global percent), you can choose a
 
  So it can be determined that when the Global percent is 0.89, it is the "optimal pruning point"
 
-​ **YOLOv3-SPP's parameters of the model after spasity training under different global channel pruning scales**
+ **YOLOv3-SPP's parameters of the model after spasity training under different global channel pruning scales**
 
 | Global  percent | P     | R       | mAP@0.5 | Params | Size of   .weights | Inference_time  (Tesla  P100) | BFLOPS |
 | --------------- | ----- | ------- | ------- | ------ | ------------------ | ----------------------------- | ------ |
@@ -255,10 +257,13 @@ So far, the whole process of model pruning of YOLOv3-SPP is completed. After mod
 
  ![image-20201114113814882](assets/image-20201114113814882.png)
 
-​ **Distribution map of the absolute value of the weight of the BN layer of the model after YOLOv4 pruning (left) and after fine-tuning (right)**
-
+ **Distribution map of the absolute value of the weight of the BN layer of the model after YOLOv4 pruning (left) and after fine-tuning (right)**
 
 So far, the whole process of model pruning of YOLOv4 is completed. After model pruning, the model accuracy loses 7 points, and the total model parameters and weight file size are reduced by **98%**. Model BFLOPS is reduced by **87%**, and the inference speed on Tesla T4 GPU is increased by **61%**.
+
+
+
+The model training of pytorch and darknet are quite different in many details.It is often better to fine tune training under the framework of darknet.It should be noted that you only need to use the pruned .cfg file and do not need to load the pre training weights!
 
 
  ### Deployment of the model after pruning on OpenVINO

@@ -1,7 +1,6 @@
 import torch.nn.functional as F
 
 from utils.utils import *
-
 from mish_cuda import MishCuda as Mish
 
 def make_divisible(v, divisor):
@@ -27,13 +26,17 @@ class Concat(nn.Module):
 
 
 class FeatureConcat(nn.Module):
-    def __init__(self, layers):
+    def __init__(self,layers,groupflag):
         super(FeatureConcat, self).__init__()
         self.layers = layers  # layer indices
         self.multiple = len(layers) > 1  # multiple layers flag
+        self.groupflag = groupflag
 
     def forward(self, x, outputs):
-        return torch.cat([outputs[i] for i in self.layers], 1) if self.multiple else outputs[self.layers[0]]
+        if self.groupflag:
+            return x[:, (x.shape[1]//2):]
+        else:
+            return torch.cat([outputs[i] for i in self.layers], 1) if self.multiple else outputs[self.layers[0]]
 
 
 
@@ -143,4 +146,5 @@ class Swish(nn.Module):
 class HardSwish(nn.Module):  # https://arxiv.org/pdf/1905.02244.pdf
     def forward(self, x):
         return x * F.hardtanh(x + 3, 0., 6., True) / 6.
+
 

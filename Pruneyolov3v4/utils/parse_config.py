@@ -4,7 +4,7 @@ import numpy as np
 
 
 def parse_model_cfg(path):
-    # 解析yolo.cfg文件Parse the yolo *.cfg file and return module definitions path may be 'cfg/yolov3.cfg', 'yolov3.cfg', or 'yolov3'
+
     if not path.endswith('.cfg'):  # add .cfg suffix if omitted
         path += '.cfg'
     if not os.path.exists(path) and os.path.exists('cfg' + os.sep + path):  # add cfg/ prefix if omitted
@@ -18,33 +18,33 @@ def parse_model_cfg(path):
     for line in lines:
         if line.startswith('['):  # This marks the start of a new block
             mdefs.append({})
-            mdefs[-1]['type'] = line[1:-1].rstrip()# str:'[net]' , line[1:-1]->net , {'type': 'net'}
+            mdefs[-1]['type'] = line[1:-1].rstrip()
             if mdefs[-1]['type'] == 'convolutional':
-                mdefs[-1]['batch_normalize'] = 0  # pre-populate with zeros (may be overwritten later)不然没有BN层的会没有这个属性，处理操作要统一
-        else:#一个字典一个模块，里面是属性键值对 如{'size': 3, 'pad': 1, 'stride': 1, 'activation': 'leaky', 'batch_normalize': 1, 'type': 'convolutional', 'filters': 32}
+                mdefs[-1]['batch_normalize'] = 0  
+        else:
             key, val = line.split("=")
             key = key.rstrip()
 
             if key == 'anchors':  # return nparray
-                mdefs[-1][key] = np.array([float(x) for x in val.split(',')]).reshape((-1, 2))  # np anchors 2维 array[[10.,13.],[16.,30.],.....]
-            elif (key in ['from', 'layers', 'mask']) or (key == 'size' and ',' in val):  # return array ,   or后的判断没遇到过，暂留
-                mdefs[-1][key] = [int(x) for x in val.split(',')]#'from':[-3],'layers':[-1,-3,-5,-6]
+                mdefs[-1][key] = np.array([float(x) for x in val.split(',')]).reshape((-1, 2))  
+            elif (key in ['from', 'layers', 'mask']) or (key == 'size' and ',' in val):  
+                mdefs[-1][key] = [int(x) for x in val.split(',')]
             else:
                 val = val.strip()
-                if val.isnumeric():  # return int or float  字符串带小数点,isnumeric()就返回false，所以在yolov3中,小数是下面的字符串类型
+                if val.isnumeric():  
                     mdefs[-1][key] = int(val) if (int(val) - float(val)) == 0 else float(val)
                 else:
-                    mdefs[-1][key] = val  # return string 如'momentum':'0.9'
+                    mdefs[-1][key] = val  
 
     # Check all fields are supported
     supported = ['type', 'batch_normalize', 'filters', 'size', 'stride', 'pad', 'activation', 'layers', 'groups',
                  'from', 'mask', 'anchors', 'classes', 'num', 'jitter', 'ignore_thresh', 'truth_thresh', 'random',
                  'stride_x', 'stride_y', 'weights_type', 'weights_normalization', 'scale_x_y', 'beta_nms', 'nms_kind',
-                 'iou_loss', 'iou_normalizer', 'cls_normalizer', 'iou_thresh']
+                 'iou_loss', 'iou_normalizer', 'cls_normalizer', 'iou_thresh','group_id','resize']
 
     f = []  # fields
-    for x in mdefs[1:]:#除去[net]
-        [f.append(k) for k in x if k not in f]#mdefx为list,x为字典,k为键
+    for x in mdefs[1:]:
+        [f.append(k) for k in x if k not in f]
     u = [x for x in f if x not in supported]  # unsupported fields
     assert not any(u), "Unsupported fields %s in %s. See https://github.com/ultralytics/yolov3/issues/631" % (u, path)
 

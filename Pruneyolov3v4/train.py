@@ -2,10 +2,7 @@
 The pytorch's yolov3 is implemented by ultralytics, reference to https://github.com/ultralytics/yolov3
 We use Network Slimming to prune, reference to https://arxiv.org/abs/1708.06519
 
-We use  
-    #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
-    #+++++++++++++++++++++++++ insert end++++++++++++++++++++++# 
-to represent the code we added on the basis of ultralytics/yolov3
+Based on https://github.com/tanluren/yolov3-channel-and-layer-pruning
 """
 
 import argparse
@@ -19,10 +16,7 @@ import test  # import test.py to get mAP after each epoch
 from models import *
 from utils.datasets import *
 from utils.utils import *
-
-#+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
 from utils.prune_utils import *
-#+++++++++++++++++++++++++ insert end++++++++++++++++++++++# 
 
 mixed_precision = True
 try:  # Mixed precision training https://github.com/NVIDIA/apex
@@ -158,11 +152,9 @@ def train(hyp):
         # possible weights are '*.weights', 'yolov3-tiny.conv.15',  'darknet53.conv.74' etc.
         load_darknet_weights(model, weights)
 
-        #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
         print('loaded weights from', weights, '\n')
-        #+++++++++++++++++++++++++ insert end++++++++++++++++++++++#
 
-    #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
+    
     if opt.prune==1:
         CBL_idx, _, prune_idx, shortcut_idx, _=parse_module_defs2(model.module_defs)
         if opt.sr:
@@ -171,13 +163,13 @@ def train(hyp):
         CBL_idx, _, prune_idx= parse_module_defs(model.module_defs)
         if opt.sr:
             print('normal sparse training ')
-    #+++++++++++++++++++++++++ insert end++++++++++++++++++++++#
+    
 
     # Mixed precision training https://github.com/NVIDIA/apex
     if mixed_precision:
         model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
 
-    #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
+    
     def adjust_learning_rate(optimizer, gamma, epoch, iteration, epoch_size):
         """调整学习率进行warm up和学习率衰减
         """
@@ -197,7 +189,7 @@ def train(hyp):
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
         return lr
-    #+++++++++++++++++++++++++ insert end++++++++++++++++++++++#
+    
 
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
@@ -258,7 +250,7 @@ def train(hyp):
                                              pin_memory=True,
                                              collate_fn=dataset.collate_fn)
 
-    #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
+    
     if isinstance(model, torch.nn.parallel.DistributedDataParallel):
         model_tmp = model.module
     else:
@@ -267,7 +259,7 @@ def train(hyp):
         bn_weights = gather_bn_weights(model_tmp.module_list, [idx])
         if tb_writer:
             tb_writer.add_histogram('before_train_perlayer_bn_weights/hist', bn_weights.numpy(), idx, bins='doane')
-    #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
+    
 
     # Model parameters
     model.nc = nc  # attach number of classes to model
@@ -301,38 +293,23 @@ def train(hyp):
         print(('\n' + '%10s' * 8) % ('Epoch', 'gpu_mem', 'GIoU', 'obj', 'cls', 'total', 'targets', 'img_size'))
         pbar = tqdm(enumerate(dataloader), total=nb)  # progress bar
 
-        #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
+        
         sr_flag = get_sr_flag(epoch, opt.sr)
-        #+++++++++++++++++++++++++ insert end++++++++++++++++++++++#
+        
 
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
             ni = i + nb * epoch  # number integrated batches (since train start)
 
-            #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
+            
             # 调整学习率，进行warm up和学习率衰减
             lr = adjust_learning_rate(optimizer, 0.1, epoch, ni, nb)
             if i == 0:
                 print('learning rate:', lr)
-            #+++++++++++++++++++++++++ insert end++++++++++++++++++++++#
+            
 
             imgs = imgs.to(device).float() / 255.0  # uint8 to float32, 0 - 255 to 0.0 - 1.0
             targets = targets.to(device)
 
-            #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
-            """
-            # Burn-in
-            if ni <= n_burn:
-                xi = [0, n_burn]  # x interp
-                model.gr = np.interp(ni, xi, [0.0, 1.0])  # giou loss ratio (obj_loss = 1.0 or giou)
-                accumulate = max(1, np.interp(ni, xi, [1, 64 / batch_size]).round())
-                for j, x in enumerate(optimizer.param_groups):
-                    # bias lr falls from 0.1 to lr0, all other lrs rise from 0.0 to lr0
-                    x['lr'] = np.interp(ni, xi, [0.1 if j == 2 else 0.0, x['initial_lr'] * lf(epoch)])
-                    x['weight_decay'] = np.interp(ni, xi, [0.0, hyp['weight_decay'] if j == 1 else 0.0])
-                    if 'momentum' in x:
-                        x['momentum'] = np.interp(ni, xi, [0.9, hyp['momentum']])
-            """
-            #+++++++++++++++++++++++++ insert end++++++++++++++++++++++#
 
             # Multi-Scale
             if opt.multi_scale:
@@ -393,10 +370,6 @@ def train(hyp):
 
             # end batch ------------------------------------------------------------------------------------------------
 
-        # Update scheduler
-        #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
-        # scheduler.step()
-        #+++++++++++++++++++++++++ insert end++++++++++++++++++++++#
 
 
         # Process epoch results
@@ -461,7 +434,7 @@ def train(hyp):
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training
 
-    #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
+    
     if isinstance(model, torch.nn.parallel.DistributedDataParallel):
         model_tmp = model.module
     else:
@@ -469,7 +442,7 @@ def train(hyp):
     for idx in prune_idx:
         bn_weights = gather_bn_weights(model_tmp.module_list, [idx])
         tb_writer.add_histogram('after_train_perlayer_bn_weights/hist', bn_weights.numpy(), idx, bins='doane')
-    #+++++++++++++++++++++++++ insert end++++++++++++++++++++++#
+    
 
     n = opt.name
     if len(n):
@@ -485,10 +458,10 @@ def train(hyp):
     if not opt.evolve:
         plot_results()  # save as results.png
 
-    #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
+    
     # print('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
     print('%g epochs completed in %.3f hours.\n' % (epochs - start_epoch, (time.time() - t0) / 3600)) # 这是U版代码的bug
-    #+++++++++++++++++++++++++ insert end++++++++++++++++++++++#
+    
 
     dist.destroy_process_group() if torch.cuda.device_count() > 1 else None
     torch.cuda.empty_cache()
@@ -497,41 +470,31 @@ def train(hyp):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=150)  # 500200 batches at bs 16, 117263 COCO images = 273 epochs
-
-    #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
-    # parser.add_argument('--batch-size', type=int, default=16)  # effective bs = batch_size * accumulate = 16 * 4 = 64
-    parser.add_argument('--batch-size', '-bs',type=int, default=16)  # effective bs = batch_size * accumulate = 16 * 4 = 64
-    #+++++++++++++++++++++++++ insert end++++++++++++++++++++++#
-
-    parser.add_argument('--cfg', type=str, default='cfg/yolov3-spp.cfg', help='*.cfg path')
-    parser.add_argument('--data', type=str, default='data/coco2014.data', help='*.data path')
+    parser.add_argument('--epochs', type=int, default=100)  # 500200 batches at bs 16, 117263 COCO images = 273 epochs
+    parser.add_argument('--batch-size', '-bs',type=int, default=32)  # effective bs = batch_size * accumulate = 16 * 4 = 64
+    parser.add_argument('--cfg', type=str, default='cfg/yolov4-tiny-3l.cfg', help='*.cfg path')
+    parser.add_argument('--data', type=str, default='data/coco2017.data', help='*.data path')
     parser.add_argument('--multi-scale', action='store_true', help='adjust (67%% - 150%%) img_size every 10 batches')
-
-    #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
-    # parser.add_argument('--img-size', nargs='+', type=int, default=[320, 640], help='[min_train, max-train, test]')
     parser.add_argument('--img-size', nargs='+', type=int, default=[416], help='[min_train, max-train, test]')
-    #+++++++++++++++++++++++++ insert end++++++++++++++++++++++#
-
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', action='store_true', help='resume training from last.pt')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
-    parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
-    parser.add_argument('--weights', type=str, default='weights/yolov3sppbaseline.weights', help='initial weights path')
+    parser.add_argument('--cache-images', action='store_true',help='cache images for faster training')
+    parser.add_argument('--weights', type=str, default='', help='initial weights path')
     parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
     parser.add_argument('--device', default='0', help='device id (i.e. 0 or 0,1 or cpu)')
     parser.add_argument('--adam', action='store_true', help='use adam optimizer')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
 
-    #+++++++++++++++++++++++++ insert +++++++++++++++++++++++++#
+ 
     parser.add_argument('--sparsity-regularization', '-sr', dest='sr', action='store_true',
                         help='train with channel sparsity regularization')
     parser.add_argument('--s', type=float, default=0.001, help='scale sparse rate')
     parser.add_argument('--prune', type=int, default=1, help='0:nomal prune 1:other prune ')
-    #+++++++++++++++++++++++++ insert end++++++++++++++++++++++#
+
 
     opt = parser.parse_args()
     opt.weights = last if opt.resume else opt.weights
